@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Viewer</title>
+    <style>
+        #pdf-container {
+            width: 100%;
+            overflow-y: auto;
+            padding: 20px;
+        }
+        canvas {
+            display: block;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="pdf-container"></div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
+    <script>
+        const url = 'https://raw.githubusercontent.com/Fran15711/presentacoinevacolors/main/EvaColors-presentacion_Ingle%CC%81s.pptx.pdf';
+        const container = document.getElementById('pdf-container');
+
+        pdfjsLib.getDocument(url).promise.then((pdf) => {
+            const totalPages = pdf.numPages;
+
+            for (let pageNumber = 1; pageNumber <= totalPages; pageNumber++) {
+                pdf.getPage(pageNumber).then((page) => {
+                    const scale = window.innerWidth / page.getViewport({ scale: 1 }).width; // Scale to fit 100% width
+                    const viewport = page.getViewport({ scale });
+
+                    const canvas = document.createElement('canvas');
+                    container.appendChild(canvas);
+
+                    const context = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
+
+                    page.render({
+                        canvasContext: context,
+                        viewport: viewport
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>
