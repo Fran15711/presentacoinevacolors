@@ -3,16 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Presentación Evacolors</title>
+    <title>PDF Viewer</title>
     <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+        }
+
         #pdf-container {
             width: 100%;
-            overflow-y: auto;
-            padding: 20px;
+            background-color: #f0f0f0;
         }
+
         canvas {
             display: block;
-            margin: 10px 0;
+            margin: 20px auto;
+            background-color: white;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            width: 100%; /* Ancho completo */
+            height: auto; /* Proporciones automáticas */
         }
     </style>
 </head>
@@ -21,31 +31,55 @@
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.10.377/pdf.min.js"></script>
     <script>
-        const url = 'https://raw.githubusercontent.com/Fran15711/presentacoinevacolors/main/EVA-FO-VT-10%20EvaColors-presentacion_espan%CC%83ol%20V03.pptx.pdf';
         const container = document.getElementById('pdf-container');
+        const url = 'https://raw.githubusercontent.com/Fran15711/presentacoinevacolors/main/EVA-FO-VT-10%20EvaColors-presentacion_espan%CC%83ol%20V03.pptx.pdf'; // URL del PDF
 
-        pdfjsLib.getDocument(url).promise.then((pdf) => {
-            const totalPages = pdf.numPages;
+        let pdfDoc = null;
 
-            for (let pageNumber = 1; pageNumber <= totalPages; pageNumber++) {
-                pdf.getPage(pageNumber).then((page) => {
-                    const scale = window.innerWidth / page.getViewport({ scale: 1 }).width; // Scale to fit 100% width
-                    const viewport = page.getViewport({ scale });
+        // Obtener la escala de cada página según el ancho del contenedor
+        const getScale = (page) => {
+            return container.offsetWidth / page.getViewport({ scale: 1 }).width;
+        };
 
-                    const canvas = document.createElement('canvas');
-                    container.appendChild(canvas);
+        // Renderizar TODAS las páginas del PDF
+        const renderAllPages = async () => {
+            for (let pageNumber = 1; pageNumber <= pdfDoc.numPages; pageNumber++) {
+                const page = await pdfDoc.getPage(pageNumber);
+                const scale = getScale(page);
+                const viewport = page.getViewport({ scale });
 
-                    const context = canvas.getContext('2d');
-                    canvas.height = viewport.height;
-                    canvas.width = viewport.width;
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
 
-                    page.render({
-                        canvasContext: context,
-                        viewport: viewport
-                    });
-                });
+                // Configurar el tamaño del canvas según la densidad de píxeles
+                const outputScale = window.devicePixelRatio || 1;
+                canvas.width = Math.floor(viewport.width * outputScale);
+                canvas.height = Math.floor(viewport.height * outputScale);
+                canvas.style.width = `${viewport.width}px`;
+                canvas.style.height = `${viewport.height}px`;
+
+                context.scale(outputScale, outputScale);
+
+                // Renderizar la página en el canvas
+                await page.render({ canvasContext: context, viewport }).promise;
+
+                // Agregar la página renderizada al contenedor
+                container.appendChild(canvas);
             }
-        });
+        };
+
+        // Cargar el PDF
+        const loadPDF = async () => {
+            try {
+                pdfDoc = await pdfjsLib.getDocument(url).promise;
+                renderAllPages();
+            } catch (error) {
+                console.error('Error al cargar el PDF:', error);
+            }
+        };
+
+        // Inicializar el visor de PDF
+        loadPDF();
     </script>
 </body>
 </html>
